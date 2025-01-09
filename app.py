@@ -45,7 +45,7 @@ def agregar_mensaje_log(texto):
     db.session.commit()
 
 #Token para la verificación
-TOKEN_FERNANDO = 'EAAhDmX2q0PsBO6F2o2BgCEjz9dNR3KfaME9KoGVlPZBubQKEcyTbe11vpNGZAczBkkdta2XaFuyeit8oynYTbxUpbuMZCVIhsvruQqYRlKFXvImfCAyCqlpn1GZAZASb0WZCyv62q73COUTOI8MPqj5dK0hxpdVm3XEp92j1qK2EcjHDxKSAQFsQP4GS55BxaFEa1zFJ3PX9MfBva0EVDv4tS5EZCAZD'
+TOKEN_FERNANDO = 'prueba_123'
 
 @app.route('/webhook', methods=['GET','POST'])
 def webhook():
