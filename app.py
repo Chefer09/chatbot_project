@@ -28,7 +28,7 @@ def ordenar_por_fecha_y_hora(registros):
 #Definir una ruta para la pagina principal
 @app.route('/')
 def index():
-    #TODO: Crear un registro en la tabla log
+    #Crear un registro en la tabla log
     registros = Log.query.all()
     registros_ordenados = ordenar_por_fecha_y_hora(registros)
     return render_template('index.html',registros=registros_ordenados)
@@ -66,9 +66,18 @@ def verificar_token(req):
         return jsonify({'error':'Error en la verificación del token'}),401
 
 def recibir_mensaje(req):
-    req = request.get_json()
-    agregar_mensaje_log(req)
-    return jsonify({'message': 'EVENT_RECEIVED'})
+    try:
+        req = request.get_json()
+        entry = req['entry'][0]
+        changes = entry['changes'][0]
+        value = changes['value']
+        obj_mensaje = value['message']
+        agregar_mensaje_log(obj_mensaje)
+
+
+        return jsonify({'message': 'EVENT_RECEIVED'})
+    except Exception as e:
+        return jsonify({'message': 'EVENT_RECEIVED'})
 
 #Ejecutar la aplicacion
 if __name__ == '__main__':
