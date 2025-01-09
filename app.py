@@ -50,7 +50,7 @@ TOKEN_FERNANDO = 'prueba_123'
 @app.route('/webhook', methods=['GET','POST'])
 def webhook():
     if request.method == 'GET':
-        challenge = request.json.get(request)
+        challenge = verificar_token(request)
         return challenge
     elif request.method == 'POST':
         reponse = recibir_mensaje(request.json)
