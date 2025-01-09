@@ -15,7 +15,7 @@ db =SQLAlchemy(app)
 class Log(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     fecha_y_hora = db.Column(db.DateTime, default=datetime.utcnow)
-    texto = db.Column(db.TEXT, nullable=False)
+    texto = db.Column(db.TEXT)
 
 #Crear la tabla si no existe
 with app.app_context():
@@ -35,18 +35,16 @@ def index():
 mensajes_log = []
 
 #Funcion para agregar mensajes y guardar en la base de datos
-def agregar_mensaje_log(texto):
-    print(f"Agregando mensaje al log: {texto}")
+def agregar_mensajes_log(texto):
     mensajes_log.append(texto)
 
     #Guardar el mensaje en la base de datos
     nuevo_registro = Log(texto=texto)
     db.session.add(nuevo_registro)
     db.session.commit()
-    print("Mensaje agregado a la base de datos")
 
 #Token de verificacion para la configuracion
-TOKEN_FERNANDO = "Fernando"
+TOKEN_ANDERCODE = "Fernando"
 
 @app.route('/webhook', methods=['GET','POST'])
 def webhook():
@@ -54,25 +52,59 @@ def webhook():
         challenge = verificar_token(request)
         return challenge
     elif request.method == 'POST':
-        response = recibir_mensaje(request)
-        return response
+        reponse = recibir_mensajes(request)
+        return reponse
 
 def verificar_token(req):
     token = req.args.get('hub.verify_token')
     challenge = req.args.get('hub.challenge')
 
-    if challenge and token == TOKEN_FERNANDO:
+    if challenge and token == TOKEN_ANDERCODE:
         return challenge
     else:
         return jsonify({'error':'Token Invalido'}),401
 
-def recibir_mensaje(req):
+def recibir_mensajes(req):
     try:
-        data = req.get_json()
-        print(f"Datos recibidos: {data}")
-        texto = data.get('text', '')  # Asegúrate de que el campo 'texto' esté presente en los datos recibidos
-        print(f"Texto extraído: {texto}")
-        agregar_mensaje_log(texto)
+        req = request.get_json()
+        entry =req['entry'][0]
+        changes = entry['changes'][0]
+        value = changes['value']
+        objeto_mensaje = value['messages']
+
+        if objeto_mensaje:
+            messages = objeto_mensaje[0]
+
+            if "type" in messages:
+                tipo = messages["type"]
+
+                #Guardar Log en la BD
+                agregar_mensajes_log(json.dumps(messages))
+
+                if tipo == "interactive":
+                    tipo_interactivo = messages["interactive"]["type"]
+
+                    if tipo_interactivo == "button_reply":
+                        text = messages["interactive"]["button_reply"]["id"]
+                        numero = messages["from"]
+
+                        enviar_mensajes_whatsapp(text,numero)
+                    
+                    elif tipo_interactivo == "list_reply":
+                        text = messages["interactive"]["list_reply"]["id"]
+                        numero = messages["from"]
+
+                        enviar_mensajes_whatsapp(text,numero)
+
+                if "text" in messages:
+                    text = messages["text"]["body"]
+                    numero = messages["from"]
+
+                    enviar_mensajes_whatsapp(text,numero)
+
+                    #Guardar Log en la BD
+                    agregar_mensajes_log(json.dumps(messages))
+
         return jsonify({'message':'EVENT_RECEIVED'})
     except Exception as e:
         return jsonify({'message':'EVENT_RECEIVED'})
@@ -337,13 +369,13 @@ def enviar_mensajes_whatsapp(texto,number):
 
     headers = {
         "Content-Type" : "application/json",
-        "Authorization" : "Bearer EAAhDmX2q0PsBOZBM5OhgAjTymddd548IOPAJvl9sjpv0wpUviiePVZAOaZArsdZAgtiaaZBY0TVZCZBho3BBbV4ISWJ6q0V0oNEWzamRZA8XK122DZClcoRLLyclukOWbZBPhd0Fc5qAuHdKUTPDdxBRnb3oCdszQUdcIXQwlPZB7zgFf26MMqVnQCApcEIOSiLauA4zO6YkdTLJ3VA6pldxdKBRZCmdnWMZD"
+        "Authorization" : "Bearer EAAhDmX2q0PsBOZCW27QRCDzN6HacONYfBrZBSGkolT1BdOnOYBkPnx0U24Pej7sul5ypt6MwZAeV0cZAj0zV5l5fMabdHCDCW5iCU4mwdVbfMnd758lNzBtOjE3QVtfDCfEgqwHmjSAqYUVJhLbPqeUlu40ZCJIa3RCdbYheF2foA67HeNCiMyVMUzEFiQ9OC4GxrFh7b2OL5b5bXqy2a68VdlE2M"
     }
 
     connection = http.client.HTTPSConnection("graph.facebook.com")
 
     try:
-        connection.request("POST","/v18.0/117721278011867/messages", data, headers)
+        connection.request("POST","/v21.0/538844325977792/messages", data, headers)
         response = connection.getresponse()
         print(response.status, response.reason)
     except Exception as e:
