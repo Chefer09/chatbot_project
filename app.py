@@ -97,3 +97,82 @@ if __name__ == '__main__':
     #Habilitar el modo debug
     app.run(host='0.0.0.0', port=80, debug=True)
 
+from flask import Flask, render_template, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+import json
+
+# Crear una instancia de la aplicacion Flask
+app = Flask(__name__)
+
+# Configurar la base de datos
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///metapython.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Crear una tabla log
+class Log(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    texto = db.Column(db.Text, nullable=False)
+
+# Crear la tabla si no existe
+with app.app_context():
+    db.create_all()
+
+# Ordenar los registros por fecha y hora
+def ordenar_por_fecha_y_hora(registros):
+    return sorted(registros, key=lambda x: x.timestamp, reverse=True)
+
+# Definir una ruta para la pagina principal
+@app.route('/')
+def index():
+    registros = Log.query.all()
+    registros_ordenados = ordenar_por_fecha_y_hora(registros)
+    return render_template('index.html', registros=registros_ordenados)
+
+mensajes_log = []
+
+# Funcion para agregar mensajes a la base de datos
+def agregar_mensaje_log(texto):
+    print(f"Agregando mensaje al log: {texto}")
+    mensajes_log.append(texto)
+
+    # Crear un registro en la tabla log
+    nuevo_registro = Log(texto=texto)
+    db.session.add(nuevo_registro)
+    db.session.commit()
+    print("Mensaje agregado a la base de datos")
+
+# Token para la verificación
+TOKEN_FERNANDO = 'Fernando'
+
+@app.route('/webhook', methods=['GET', 'POST'])
+def webhook():
+    if request.method == 'GET':
+        challenge = verificar_token(request)
+        return challenge
+    elif request.method == 'POST':
+        response = recibir_mensaje(request)
+        return response
+
+def verificar_token(req):
+    token = req.args.get('hub.verify_token')
+    challenge = req.args.get('hub.challenge')
+
+    if token == TOKEN_FERNANDO:
+        return challenge
+    else:
+        return jsonify({'error': 'Error en la verificación del token'}), 401
+
+def recibir_mensaje(req):
+    data = req.get_json()
+    print(f"Datos recibidos: {data}")
+    texto = data.get('texto', '')  # Asegúrate de que el campo 'texto' esté presente en los datos recibidos
+    print(f"Texto extraído: {texto}")
+    agregar_mensaje_log(texto)
+    return jsonify({'message': 'EVENT_RECEIVED'})
+
+# Ejecutar la aplicacion
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80, debug=True)
