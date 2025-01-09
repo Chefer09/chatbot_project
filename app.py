@@ -45,7 +45,7 @@ def agregar_mensaje_log(texto):
     db.session.commit()
 
 #Token para la verificación
-TOKEN_FERNANDO = 'prueba_123'
+TOKEN_FERNANDO = 'Fernando'
 
 @app.route('/webhook', methods=['GET','POST'])
 def webhook():
@@ -63,7 +63,7 @@ def verificar_token(req):
     if token and challenge == TOKEN_FERNANDO:
         return challenge
     else:
-        return jsonify({'error':'Error en la verificación del token'}), 401
+        return jsonify({'error':'Error en la verificación del token'}),401
 
 def recibir_mensaje(req):
     req = request.get_json()
