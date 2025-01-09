@@ -39,7 +39,7 @@ mensajes_log = []
 def agregar_mensaje_log(texto):
     mensajes_log.append(texto)
 
-    #TODO: Crear un registro en la tabla log
+    #Crear un registro en la tabla log
     nuevo_registro = Log(texto=texto)
     db.session.add(nuevo_registro)
     db.session.commit()
@@ -60,7 +60,7 @@ def verificar_token(req):
     token = req.args.get('hub.verify_token')
     challenge = req.args.get('hub.challenge')
 
-    if token and challenge == TOKEN_FERNANDO:
+    if token == TOKEN_FERNANDO:
         return challenge
     else:
         return jsonify({'error':'Error en la verificación del token'}),401
