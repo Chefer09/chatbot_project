@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
@@ -17,23 +17,15 @@ class Log(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     texto = db.Column(db.TEXT)
 
-#TODO: Crear la tabla si no existe
+#Crear la tabla si no existe
 with app.app_context():
     db.create_all()
 
-    #TODO: Ejemplos
-    prueb1 = Log(texto='Prueba 1')
-    prueb2 = Log(texto='Prueba 2')
-
-    db.session.add(prueb1)
-    db.session.add(prueb2)
-    db.session.commit()
-
-#TODO: Ordenar los registros por fecha y hora 
+#Ordenar los registros por fecha y hora 
 def ordenar_por_fecha_y_hora(registros):
     return sorted(registros, key=lambda x: x.timestamp, reverse=True)
 
-#TODO: Definir una ruta para la pagina principal
+#Definir una ruta para la pagina principal
 @app.route('/')
 def index():
     #TODO: Crear un registro en la tabla log
@@ -43,7 +35,7 @@ def index():
 
 mensajes_log = []
 
-#TODO: Funcion para agregar mensajes a la base de datos
+#Funcion para agregar mensajes a la base de datos
 def agregar_mensaje_log(texto):
     mensajes_log.append(texto)
 
@@ -52,10 +44,34 @@ def agregar_mensaje_log(texto):
     db.session.add(nuevo_registro)
     db.session.commit()
 
+#Token para la verificación
+TOKEN_FERNANDO = 'EAAhDmX2q0PsBO6F2o2BgCEjz9dNR3KfaME9KoGVlPZBubQKEcyTbe11vpNGZAczBkkdta2XaFuyeit8oynYTbxUpbuMZCVIhsvruQqYRlKFXvImfCAyCqlpn1GZAZASb0WZCyv62q73COUTOI8MPqj5dK0hxpdVm3XEp92j1qK2EcjHDxKSAQFsQP4GS55BxaFEa1zFJ3PX9MfBva0EVDv4tS5EZCAZD'
 
+@app.route('/webhook', methods=['GET','POST'])
+def webhook():
+    if request.method == 'GET':
+        challenge = request.json.get(request)
+        return challenge
+    elif request.method == 'POST':
+        reponse = recibir_mensaje(request.json)
+        return reponse
 
-#TODO: Ejecutar la aplicacion
+def verificar_token(req):
+    token = req.args.get('hub.verify_token')
+    challenge = req.args.get('hub.challenge')
+
+    if token and challenge == TOKEN_FERNANDO:
+        return challenge
+    else:
+        return jsonify({'error':'Error en la verificación del token'}), 401
+
+def recibir_mensaje(req):
+    req = request.get_json()
+    agregar_mensaje_log(req)
+    return jsonify({'message': 'EVENT_RECEIVED'})
+
+#Ejecutar la aplicacion
 if __name__ == '__main__':
-    #TODO: Habilitar el modo debug
+    #Habilitar el modo debug
     app.run(host='0.0.0.0', port=80, debug=True)
 
